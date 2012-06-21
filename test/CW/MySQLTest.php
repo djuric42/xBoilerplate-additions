@@ -6,14 +6,16 @@
  * Time: 09:23
  */
 
+require_once("../bootstrap.php");
+
 class CW_SQLTest extends PHPUnit_Framework_TestCase
 {
     private $config;
 
     const DB_HOST = 'localhost';
     const DB_USER = 'root';
-    const DB_PASS = '';
-    const DB_SCHEMA = 'xBoilerplate_additions';
+    const DB_PASS = 'root';
+    const DB_SCHEMA = 'test';
 
     private $fred;
     private $barney;
@@ -89,7 +91,7 @@ class CW_SQLTest extends PHPUnit_Framework_TestCase
         // firstname / lastname / age / createdDate / balance
         $fred =     TestHelper::createTestUser('fred',   'flintstone', 11, '2001-01-01 11:11:11', 1.11);
         $barney =   TestHelper::createTestUser('Barney', 'Rubble',     12, '2012-12-12 12:12:12', 12.12);
-        $alice =    TestHelper::createTestUser('Alice',  'Jones',      21, '1990-04-21 21:21:21', 0.21);
+        $alice =    TestHelper::createTestUser('HäääLööZüü',  'Whaaat',      21, '1990-04-21 21:21:21', 0.21);
 
         $bob =      TestHelper::createTestUser('Bob', 'Newman', 31, '1980-11-11 10:10:10', 21.21);
         $dirk =      TestHelper::createTestUser('Dirk', 'Newman', 31, '1980-04-11 10:10:10', 21.21);
@@ -302,8 +304,11 @@ class CW_SQLTest extends PHPUnit_Framework_TestCase
         $barney = $people[0];
         $this->assertEquals($this->barney['firstname'], $barney->firstname, 'Firstname search for Barney failed');
 
-        $people = CW_SQL::getInstance()->select($allColumns, 'people', array('lastname' => 'Jones'));
+        $people = CW_SQL::getInstance()->select($allColumns, 'people', array('lastname' => 'Whaaat'));
         $this->assertEquals(1, sizeof($people), 'Lastname where of Jones failed');
+
+        $people = CW_SQL::getInstance()->select($allColumns, 'people', array('firstname' => 'HäääLööZüü'));
+        $this->assertEquals(1, sizeof($people), 'Lastname where of Jones German  failed');
 
         $alice = $people[0];
         $this->assertEquals($this->alice['lastname'], $alice->lastname, 'Lastname search of Alice failed');
@@ -334,6 +339,12 @@ class CW_SQLTest extends PHPUnit_Framework_TestCase
 
         $aliceAgain = $people[0];
         $this->assertEquals($this->alice['firstname'], $aliceAgain->firstname);
+    }
+
+    public function testSelect_GermanData() {
+        $people = CW_SQL::getInstance()->select(array('firstname', 'lastname'), 'people');
+        $this->assertEquals('HäääLööZüü', $people[2]->firstname);
+        $this->assertEquals('Whaaat', $people[2]->lastname);
     }
 
     /**
@@ -440,6 +451,24 @@ class CW_SQLTest extends PHPUnit_Framework_TestCase
         $id = CW_SQL::getInstance()->insert('people',
             array('firstname' => 'balanceTest1', 'lastname' => 'surnamebt1', 'age' => 23, 'balance' => $balance,
                     'realBalance' => $balance));
+
+        $results = CW_SQL::getInstance()->query('SELECT balance, realBalance FROM people WHERE id = ' . $id);
+        $addedPerson = $results->fetchObject();
+        $tolerance = 0.001;
+        $difference = abs($balance - $addedPerson->balance);
+        $this->assertTrue($difference < $tolerance);
+
+
+        $this->assertEquals($balance, $addedPerson->realBalance);
+
+
+    }
+
+    public function testInsert_GermanStyle() {
+        $balance = 0.22;
+        $id = CW_SQL::getInstance()->insert('people',
+            array('firstname' => 'Häää Löö Züü', 'lastname' => 'Whaaat?!', 'age' => 23, 'balance' => $balance,
+                'realBalance' => $balance));
 
         $results = CW_SQL::getInstance()->query('SELECT balance, realBalance FROM people WHERE id = ' . $id);
         $addedPerson = $results->fetchObject();
