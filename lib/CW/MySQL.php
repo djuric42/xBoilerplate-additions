@@ -612,9 +612,13 @@ class CW_MySQL extends CW_SQL
         $whereNames = array_keys($where);
         $variableWhere = '';
         foreach($whereNames as $item) {
+
             $variableWhere .=$item .'=? ';
+            if(sizeof($variableWhere) > 0) {
+                $variableWhere .= " AND ";
+            }
         }
-        $variableWhere = substr($variableWhere, 0, -1);
+        $variableWhere = substr($variableWhere, 0, -5);
 
         $update = 'UPDATE '.$table;
         $set = ' SET ' .$variablesSet;
